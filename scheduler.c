@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern job_t jobs;
+int tS = 4;
 
 void scheduler_fifo()
 {
@@ -18,7 +18,7 @@ void scheduler_fifo()
         total_response += firstrun - arrival;
 
         int r;
-        while ((r = schedule_job(i, 9, 0)) >= 0)
+        while ((r = schedule_job(i, 9)) >= 0)
             printf("job %d run for %d at %d\n", i, r, get_current_time());
 
         int completion = get_current_time();
@@ -33,7 +33,6 @@ void scheduler_fifo()
 
 void scheduler_rr()
 {
-  int quantum = 4;
   int num_jobs = get_num_jobs();
   int arrival = get_current_time();
   int completion;
@@ -45,7 +44,6 @@ void scheduler_rr()
   }
   
   int flag = 0;
-  int start = 0;
   do{
     for(int i = 0; i < num_jobs; i++){
       if (status[i] == 'b'){
@@ -54,24 +52,27 @@ void scheduler_rr()
 	status[i] = 'p'; //processing
 	total_response += firstrun - arrival;
       }
-      int compVal = schedule_job(i,quantum,start);
-      if (compVal == -1){
-	completion = get_current_time();
-	status[i] = 'f'; //finished
-	total_turnaround += completion - arrival;
+      if (status[i] != 'f'){
+	int compVal = schedule_job(i,tS);
+	if (compVal == -1){
+	  completion = get_current_time();
+	  printf("job %d finished at %d\n", i, completion);
+	  status[i] = 'f'; //finished
+	  total_turnaround += completion - arrival;
+	}
+	else{
+	  printf("job %d run for %d at %d\n", i, compVal, get_current_time());
+	}
       }
-      else{
-	
+      
+      flag = 0;
+      for (int c = 0; c < num_jobs; c++){
+	if(status[c] != 'f')
+	  flag = 1;
       }
-    }
-
-    flag = 0;
-    for (int c = 0; c < num_jobs; c++){
-      if(status[c] != 'f')
-	flag = 1;
-    }
 	
-  } while(flag==0);
+    }
+  }while(flag==1);
 
   free(status);
   status = NULL;
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
     int jobs = 2;
 
     char c;
-    while ((c = getopt(argc, argv, "s:n:h")) != -1) {
+    while ((c = getopt(argc, argv, "s:n:t:h")) != -1) {
         switch (c) {
         case 's':
             seed = atoi(optarg);
@@ -106,6 +107,10 @@ int main(int argc, char* argv[])
         case 'n':
             jobs = atoi(optarg);
             break;
+
+	case 't':
+	    tS = atoi(optarg);
+	    break;
 
         default:
             help();

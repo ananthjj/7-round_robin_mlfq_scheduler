@@ -25,6 +25,6 @@ int get_current_time();
  * job has actually run before the IO operation. This operation 
  * has an overhead of one time unit.
  */
-int schedule_job(int job_id, int timeout, int start);
+int schedule_job(int job_id, int timeout);
 
 #endif //__RUNTIME_H__

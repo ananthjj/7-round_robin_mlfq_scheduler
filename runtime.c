@@ -8,6 +8,7 @@
 
 int num_jobs;
 int current_time;
+int timeSlice;
 
 struct job_t {
     int num_parts;
@@ -20,7 +21,7 @@ struct job_t jobs[MAX_NUM_JOBS];
 
 void init_simulation(int seed, int _num_jobs)
 {
-    current_time = 0;
+  current_time = 0;
 
     num_jobs = _num_jobs;
     if (num_jobs < 0 || num_jobs > MAX_NUM_JOBS)
@@ -50,7 +51,7 @@ int get_current_time()
     return current_time;
 }
 
-int schedule_job(int job_id, int timeout, int start)
+int schedule_job(int job_id, int timeout)
 {
     if (job_id < 0 || job_id >= num_jobs || timeout <= 0) {
         printf("invaid parameters\n");
@@ -62,7 +63,7 @@ int schedule_job(int job_id, int timeout, int start)
         return -1;
 
     int work;
-    for (work = start; work < timeout; work++) {
+    for (work = 0; work < timeout; work++) {
         if (jobs[job_id].step >= jobs[job_id].parts[jobs[job_id].index]) {
             jobs[job_id].step = 0;
             jobs[job_id].index += 1;
@@ -73,21 +74,4 @@ int schedule_job(int job_id, int timeout, int start)
 
     current_time += work;
     return work;
-}
-
-int part_process (int i, int quantum){
-  int completion;
-  for (int work = 0; work < quantum; work++) {
-      	if (jobs[i].index >= jobs[i].num_parts){
-	  completion = get_current_time();
-	  return completion;
-	}
-        if (jobs[i].step >= jobs[i].parts[jobs[i].index]) {
-	  jobs[i].step = 0;
-          jobs[i].index += 1;
-        }
-	else
-	  jobs[i].step += 1;
-  }
-  return -1;
 }
