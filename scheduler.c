@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern job_t jobs;
+
 void scheduler_fifo()
 {
     int num_jobs = get_num_jobs();
@@ -16,7 +18,7 @@ void scheduler_fifo()
         total_response += firstrun - arrival;
 
         int r;
-        while ((r = schedule_job(i, 9)) >= 0)
+        while ((r = schedule_job(i, 9, 0)) >= 0)
             printf("job %d run for %d at %d\n", i, r, get_current_time());
 
         int completion = get_current_time();
@@ -31,10 +33,56 @@ void scheduler_fifo()
 
 void scheduler_rr()
 {
+  int quantum = 4;
+  int num_jobs = get_num_jobs();
+  int arrival = get_current_time();
+  int completion;
+  float total_turnaround = 0.0f, total_response = 0.0f;
+  char* status = malloc(sizeof(char) * num_jobs);
+  
+  for (int b = 0; b < num_jobs; b++){
+    status[b] = 'b'; //beginning
+  }
+  
+  int flag = 0;
+  int start = 0;
+  do{
+    for(int i = 0; i < num_jobs; i++){
+      if (status[i] == 'b'){
+	int firstrun = get_current_time();
+	printf("job %d started at %d\n", i, firstrun);
+	status[i] = 'p'; //processing
+	total_response += firstrun - arrival;
+      }
+      int compVal = schedule_job(i,quantum,start);
+      if (compVal == -1){
+	completion = get_current_time();
+	status[i] = 'f'; //finished
+	total_turnaround += completion - arrival;
+      }
+      else{
+	
+      }
+    }
+
+    flag = 0;
+    for (int c = 0; c < num_jobs; c++){
+      if(status[c] != 'f')
+	flag = 1;
+    }
+	
+  } while(flag==0);
+
+  free(status);
+  status = NULL;
+  
+  printf("Average turnaround time was %f\n", total_turnaround / num_jobs);
+  printf("Average response time was %f\n", total_response / num_jobs);
 }
 
 void scheduler_mlfq()
 {
+  
 }
 
 void help()
