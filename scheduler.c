@@ -5,6 +5,7 @@
 #include <string.h>
 
 int tS = 4;
+int timeS = 10;
 
 void scheduler_fifo()
 {
@@ -118,6 +119,18 @@ int checkStatus(int* Q, int size, char* status){
   return 1;
 }
 
+void moveJobs(int* HQ, int hqsize, int* LQ, int lqsize){
+  for (int i = 0; i<lqsize; i++){
+    HQ[hqsize++] = LQ[i];
+  }
+}
+
+void moveAllJobs(int* Q1, int q1size, int* Q2, int q2size, int* Q3, int q3size, int* Q4, int q4size){
+  moveJobs(Q4,q4size,Q3,q3size);
+  moveJobs(Q4,q4size,Q2,q2size);
+  moveJobs(Q4,q4size,Q1,q1size);
+}
+
 void scheduler_mlfq()
 {
   int Q1[QSIZE], Q2[QSIZE], Q3[QSIZE], Q4[QSIZE];
@@ -204,7 +217,7 @@ int main(int argc, char* argv[])
     int jobs = 2;
 
     char c;
-    while ((c = getopt(argc, argv, "s:n:t:h")) != -1) {
+    while ((c = getopt(argc, argv, "s:n:t:S:h")) != -1) {
         switch (c) {
         case 's':
             seed = atoi(optarg);
@@ -217,6 +230,10 @@ int main(int argc, char* argv[])
 	case 't':
 	    tS = atoi(optarg);
 	    break;
+
+	case 'S':
+	  timeS = atoi(optarg);
+	  break;
 
         default:
             help();
