@@ -81,9 +81,115 @@ void scheduler_rr()
   printf("Average response time was %f\n", total_response / num_jobs);
 }
 
+#define QSIZE 100
+
+int adjust_queue(int* Q, int size){
+  int index = 0;
+  for (int i = 0; i<size; i++){
+    if(Q[i] != -1){
+      Q[index++] = Q[i];
+    }
+  }
+  return index;
+}
+
+float processQueue(int* HQ, int i, float total_turnaround, int* LQ , int* LQsize, int arrival, char* status){
+  if (HQ[i] != -1){
+    int compVal = schedule_job(HQ[i], tS);
+    if (compVal == -1){
+      int completion = get_current_time();
+      printf("job %d finished at %d\n", HQ[i], completion);
+      status[HQ[i]] = 'f'; //finished
+      total_turnaround += completion - arrival;
+    }
+    else{
+      LQ[(*LQsize)++] = HQ[i];
+      HQ[i] = -1;
+    }
+  }
+  return total_turnaround;
+}
+
+int checkStatus(int* Q, int size, char* status){
+  for (int i = 0; i<size; i++){
+    if (status[Q[i]] != 'f')
+	return 0;
+  }
+  return 1;
+}
+
 void scheduler_mlfq()
 {
+  int Q1[QSIZE], Q2[QSIZE], Q3[QSIZE], Q4[QSIZE];
+  int q1size = 0, q2size = 0, q3size = 0, q4size = 0;
+  int num_jobs = get_num_jobs();
+  int arrival = get_current_time();
+  float total_turnaround = 0.0f, total_response = 0.0f;
+  char* status = malloc(sizeof(char) * num_jobs);
+
+  int flag = 0;
+  for (int b = 0; b < num_jobs; b++){
+    Q4[b] = b;
+    status[b] = 'b'; //beginning
+    q4size++;
+  }
   
+  do{
+    for (int i = 0; i < q4size; i++){
+      if (status[Q4[i]] == 'b'){
+	int firstrun = get_current_time();
+        printf("job %d started at %d\n", i, firstrun);
+	status[Q4[i]] = 'p'; //processing
+        total_response += firstrun - arrival;
+      }
+      total_turnaround = processQueue(Q4, i, total_turnaround, Q3, &q3size, arrival, status);
+      q4size = adjust_queue(Q4, q4size);
+    }
+
+    for (int j = 0; j < q3size; j++){
+      if (checkStatus(Q4, q4size, status) == 1){
+	total_turnaround = processQueue(Q3, j, total_turnaround, Q2, &q2size, arrival, status);
+	q3size = adjust_queue(Q3, q3size);
+      }
+      else
+	break;
+    }
+    for (int k = 0; k < q2size; k++){
+      if (checkStatus(Q3, q3size, status) == 1 && checkStatus(Q4, q4size, status) == 1){
+	total_turnaround = processQueue(Q2, k, total_turnaround, Q1, &q1size, arrival, status);
+	q2size = adjust_queue(Q2, q2size);
+      }
+      else
+	break;
+    }
+    for (int l = 0; l<q1size; l++){
+      if(checkStatus(Q2, q2size, status) == 1 && checkStatus(Q3, q3size, status) == 1 && checkStatus(Q4, q4size, status) == 1){
+	int compVal = schedule_job(Q1[l], tS);
+	if (compVal == -1){
+	  int completion = get_current_time();
+	  printf("job %d finished at %d\n", Q1[l], completion);
+	  status[Q1[l]] = 'f'; //finished
+	  total_turnaround += completion - arrival;
+	}
+	q1size = adjust_queue(Q1, q1size);
+      }
+      else
+	break;
+    }
+
+
+    flag = 0;
+    for (int c = 0; c < num_jobs; c++){
+	if(status[c] != 'f')
+	  flag = 1;
+      }
+    
+  } while(flag == 1);
+  free(status);
+  status = NULL;
+  
+  printf("Average turnaround time was %f\n", total_turnaround / num_jobs);
+  printf("Average response time was %f\n", total_response / num_jobs);
 }
 
 void help()
